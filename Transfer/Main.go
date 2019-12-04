@@ -21,11 +21,11 @@ type transferRequest struct {
 }
 type check struct{
 	EmailID string `json:"email"`
+	EmailID2 string `json:"email2"`
 }
 type error struct{
 	Message string `json:"message"`
 }
-
 type recurrin struct{
 	Email string `json:"email"`
 	Operation string `json:"operation"`
@@ -33,13 +33,18 @@ type recurrin struct{
 	Duration string `json:"duration"`
 	Amount string `json:"Amount"`
 }
+type transferAmount struct{
+	Sender string `json:"email"`
+	Receiver string `json:"email2"`
+	TransferAmount string `json:"transferAmount"`
+}
 func main(){
 	router := mux.NewRouter()
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
 	router.HandleFunc("/recurring",recurringPost).Methods("POST")
 	router.HandleFunc("/recurring",recurringGet).Methods("GET")
-
+	router.HandleFunc("/transferWithinBank",transferWithinBank).Methods("POST")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
@@ -69,12 +74,75 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 
 }
 
+func transferWithinBank(w http.ResponseWriter,r *http.Request,){
+
+	var client *mongo.Client
+	fmt.Println("Starting the application...")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	fmt.Println("Client Options set...")
+	client, err := mongo.Connect(ctx, clientOptions)
+	fmt.Println("Mongo Connected...")
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println("error")
+	}
+	var req transferAmount
+	var Check check
+	err2 := json.NewDecoder(r.Body).Decode(&req)
+	if(err2 != nil){
+		log.Fatal(err2)
+	}
+	Check.EmailID = req.Sender
+
+	obj, err := json.Marshal(map[string]string{
+		"email" : req.Sender,
+		"type" : "savings",
+		"operation" : "debit",
+		"amount" : req.TransferAmount,
+	})
+	requestBody, err := json.Marshal(map[string]json.RawMessage{
+		"MessageBody" : obj,
+	})
+	fmt.Println(requestBody)
+	if(err != nil){
+		log.Fatal(err)
+	}
+	resp,err := http.Post("https://4l0u135eh3.execute-api.us-east-1.amazonaws.com/test/api/send","application/json",bytes.NewBuffer(requestBody))
+	if(err != nil){
+		log.Fatal(err)
+	}
+	fmt.Println(resp.Body)
+
+	Check.EmailID2 = req.Receiver
+
+	obj, err = json.Marshal(map[string]string{
+		"email" : req.Receiver,
+		"type" : "savings",
+		"operation" : "credit",
+		"amount" : req.TransferAmount,
+	})
+	requestBody, err = json.Marshal(map[string]json.RawMessage{
+		"MessageBody" : obj,
+	})
+	fmt.Println(requestBody)
+	if(err != nil){
+		log.Fatal(err)
+	}
+	resp,err = http.Post("https://4l0u135eh3.execute-api.us-east-1.amazonaws.com/test/api/send","application/json",bytes.NewBuffer(requestBody))
+	if(err != nil){
+		log.Fatal(err)
+	}
+	fmt.Println(resp.Body)
+}
+
 func transferPut(w http.ResponseWriter,r *http.Request,){
 
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -110,6 +178,8 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 	}
 	fmt.Println(resp.Body)
 }
+
+
 func recurringPost(w http.ResponseWriter,r *http.Request) {
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
