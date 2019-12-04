@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -38,13 +39,19 @@ type transferAmount struct{
 	Receiver string `json:"email2"`
 	TransferAmount string `json:"transferAmount"`
 }
+type accounts struct {
+	Type string `bson:"type"`
+	Email string `bson:"email"`
+	Balance string `bson:"balance"`
+	Date string `bson:"date"`
+}
 func main(){
 	router := mux.NewRouter()
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
 	router.HandleFunc("/recurring",recurringPost).Methods("POST")
 	router.HandleFunc("/recurring",recurringGet).Methods("GET")
-	router.HandleFunc("/transferWithinBank",transferWithinBank).Methods("POST")
+	router.HandleFunc("/transferWithinBank",transferWithinBank).Methods("PUT")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
@@ -52,7 +59,7 @@ func transferGet(w http.ResponseWriter,r *http.Request,) {
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -75,7 +82,7 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 }
 
 func transferWithinBank(w http.ResponseWriter,r *http.Request,){
-
+	var result accounts
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
@@ -94,8 +101,18 @@ func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 	if(err2 != nil){
 		log.Fatal(err2)
 	}
-	Check.EmailID = req.Sender
 
+	collection := client.Database("Bank").Collection("accounts")
+	collection.FindOne(context.TODO(),bson.D{{"email",req.Sender}}).Decode(&result)
+	fmt.Println(result)
+	balance,err:=strconv.Atoi(result.Balance)
+	requestedAmount,_:=strconv.Atoi(req.TransferAmount)
+	if balance<requestedAmount {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode("Insufficient Balance!")
+		return
+	}
+	Check.EmailID = req.Sender
 	obj, err := json.Marshal(map[string]string{
 		"email" : req.Sender,
 		"type" : "savings",
