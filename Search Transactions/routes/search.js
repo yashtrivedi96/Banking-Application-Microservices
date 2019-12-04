@@ -6,9 +6,8 @@ router.post('/search', async (req, res) => {
        email: req.body.email,
        beforeTransaction: req.body.beforeTransaction,
        afterTransaction: req.body.afterTransaction,
-       type: req.body.type,
-       change: req.body.change,
-       date: req.body.date
+       transactionType: req.body.transactionType,
+       amountChanged: req.body.amountChanged
    });
    try {
         const savedTransaction = await search.save();

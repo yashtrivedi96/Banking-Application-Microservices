@@ -11,15 +11,11 @@ const searchSchema = new mongoose.Schema({
     afterTransaction: {
        type: String
     },
-    type: {
+    transactionType: {
        type: String
     },
-    change: {
+    amountChanged: {
        type: String
-    },
-    date: {
-       type: Date,
-        default: Date.now
     }
 },
     { collection: 'transaction_details'});
