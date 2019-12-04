@@ -1,0 +1,5 @@
+{
+    "mongoURIusers": "mongodb+srv://kowshhal:gopi123<password>@devconnector-kskyr.mongodb.net/test?retryWrites=true&w=majority",
+    "mongoURI": "mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority",
+    "jwtSecret": "mysecrettoken"
+}
