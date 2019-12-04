@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -19,30 +20,36 @@ type transferRequest struct {
 	TransferAmount string `json:"transferAmount"`
 }
 type check struct{
-	EmailID string `bson:"email"`
+	EmailID string `json:"email"`
 }
 type error struct{
 	Message string `json:"message"`
 }
 
+type recurrin struct{
+	Email string `json:"email"`
+	Operation string `json:"operation"`
+	Type string `json:"type"`
+	Duration string `json:"duration"`
+	Amount string `json:"Amount"`
+}
 func main(){
 	router := mux.NewRouter()
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
-	log.Fatal(http.ListenAndServe(":80", router))
+	router.HandleFunc("/recurring",recurringPost).Methods("POST")
+	router.HandleFunc("/recurring",recurringGet).Methods("GET")
+	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
 func transferGet(w http.ResponseWriter,r *http.Request,) {
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	//clientOptions := options.Client().ApplyURI("mongodb+srv://kowshhal:gopi123@devconnector-kskyr.mongodb.net/test?retryWrites=true&w=majority")
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
-	//var mongodb_database = "Agrifund"
-	//var mongodb_collection = "accounts"
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +60,6 @@ func transferGet(w http.ResponseWriter,r *http.Request,) {
 	locationId := mux.Vars(r)["EmailID"]
 	err = collection.FindOne(context.TODO(), bson.D{{"EmailID", locationId}}).Decode(&result)
 	if err != nil {
-		//log.Fatal(err)
 		fmt.Println("accounts document error")
 		return
 	}
@@ -67,13 +73,10 @@ func transferPut(w http.ResponseWriter,r *http.Request,){
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	//clientOptions := options.Client().ApplyURI("mongodb://cmpe281:cmpe281@3.89.47.220:27017")
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
-	//var mongodb_database = "Agrifund"
-	//var mongodb_collection = "accounts"
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
@@ -81,7 +84,6 @@ func transferPut(w http.ResponseWriter,r *http.Request,){
 	}
 	var req transferRequest
 	var Check check
-	//var result string
 	err2:=json.NewDecoder(r.Body).Decode(&req)
 	if(err2!=nil){
 		log.Fatal(err2)
@@ -106,4 +108,67 @@ func transferPut(w http.ResponseWriter,r *http.Request,){
 		log.Fatal(err)
 	}
 	fmt.Println(resp.Body)
+}
+func recurringPost(w http.ResponseWriter,r *http.Request) {
+	var client *mongo.Client
+	fmt.Println("Starting the application...")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	fmt.Println("Client Options set...")
+	client, err := mongo.Connect(ctx, clientOptions)
+	fmt.Println("Mongo Connected...")
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println("error")
+	}
+	var req recurrin
+	err2 := json.NewDecoder(r.Body).Decode(&req)
+	if (err2 != nil) {
+		log.Fatal(err2)
+	}
+
+	collection := client.Database("test").Collection("recurringTransfer")
+	_, err = collection.InsertOne(context.TODO(), req)
+	if (err != nil) {
+		log.Fatal(err)
+	}
+}
+
+func recurringGet(w http.ResponseWriter, r* http.Request){
+
+	var client *mongo.Client
+	fmt.Println("Starting the application...")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	fmt.Println("Client Options set...")
+	client, err := mongo.Connect(ctx, clientOptions)
+	fmt.Println("Mongo Connected...")
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println("error")
+	}
+	var req check
+	err2 := json.NewDecoder(r.Body).Decode(&req)
+	if (err2 != nil) {
+		log.Fatal(err2)
+	}
+
+	var results []recurrin
+	collection := client.Database("test").Collection("recurringTransfer")
+	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",req.EmailID}})
+	if(err!=nil){
+		log.Fatal(err)
+	}
+	var result recurrin
+	for cursor.Next(context.TODO()){
+		err=cursor.Decode(&result)
+		if(err!=nil){
+			log.Fatal(err)
+		}
+		results = append(results, result)
+	}
+	fmt.Println(results)
+json.NewEncoder(w).Encode(results)
 }
