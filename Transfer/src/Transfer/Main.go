@@ -52,6 +52,7 @@ func main(){
 	router.HandleFunc("/recurring",recurringPost).Methods("POST")
 	router.HandleFunc("/recurring",recurringGet).Methods("GET")
 	router.HandleFunc("/transferWithinBank",transferWithinBank).Methods("PUT")
+	router.HandleFunc("/admin",addtransactionsAdmin).Methods("PUT")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
@@ -80,6 +81,48 @@ func transferGet(w http.ResponseWriter,r *http.Request,) {
 	fmt.Printf("Found a document: %+v\n", result)
 
 }
+
+func addtransactionsAdmin(w http.ResponseWriter,r *http.Request,){
+	var client *mongo.Client
+	fmt.Println("Starting the application...")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	fmt.Println("Client Options set...")
+	client, err := mongo.Connect(ctx, clientOptions)
+	fmt.Println("Mongo Connected...")
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println("error")
+	}
+	var req transferRequest
+	var Check check
+	err2:=json.NewDecoder(r.Body).Decode(&req)
+	if(err2!=nil){
+		log.Fatal(err2)
+	}
+	Check.EmailID=req.EmailID
+
+	obj,err:=json.Marshal(map[string]string{
+		"email":req.EmailID,
+		"type":"savings",
+		"operation":"credit",
+		"amount":req.TransferAmount,
+	})
+	requestBody,err:=json.Marshal(map[string]json.RawMessage{
+		"MessageBody":obj,
+	})
+	fmt.Println(requestBody)
+	if(err!=nil){
+		log.Fatal(err)
+	}
+	resp,err:=http.Post("https://4l0u135eh3.execute-api.us-east-1.amazonaws.com/test/api/send","application/json",bytes.NewBuffer(requestBody))
+	if(err!=nil){
+		log.Fatal(err)
+	}
+	fmt.Println(resp.Body)
+}
+
 
 func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 	var result accounts
