@@ -12,11 +12,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type transferRequest struct {
 	EmailID string `json:"email"`
+	Type string `json:"type"`
 	TransferAmount string `json:"transferAmount"`
 }
 type check struct{
@@ -33,13 +35,18 @@ type recurrin struct{
 	Duration string `json:"duration"`
 	Amount string `json:"Amount"`
 }
+type accounts struct {
+	Type string `bson:"type"`
+	Email string `bson:"email"`
+	Balance string `bson:"balance"`
+	Date string `bson:"date"`
+}
 func main(){
 	router := mux.NewRouter()
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
 	router.HandleFunc("/recurring",recurringPost).Methods("POST")
 	router.HandleFunc("/recurring",recurringGet).Methods("GET")
-
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
@@ -71,10 +78,16 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 
 func transferPut(w http.ResponseWriter,r *http.Request,){
 
+var result accounts
+	var req transferRequest
+	err2:=json.NewDecoder(r.Body).Decode(&req)
+	if(err2!=nil){
+		log.Fatal(err2)
+	}
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -83,14 +96,16 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 		log.Fatal(err)
 		fmt.Println("error")
 	}
-	var req transferRequest
-	var Check check
-	err2:=json.NewDecoder(r.Body).Decode(&req)
-	if(err2!=nil){
-		log.Fatal(err2)
+	collection := client.Database("Bank").Collection("accounts")
+	collection.FindOne(context.TODO(),bson.D{{"email",req.EmailID}}).Decode(&result)
+	fmt.Println(result)
+	balance,err:=strconv.Atoi(result.Balance)
+	requestedAmount,_:=strconv.Atoi(req.TransferAmount)
+	if balance<requestedAmount {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode("Insufficient Balance!")
+		return
 	}
-	Check.EmailID=req.EmailID
-
 	obj,err:=json.Marshal(map[string]string{
 		"email":req.EmailID,
 		"type":"savings",
@@ -100,7 +115,6 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 	requestBody,err:=json.Marshal(map[string]json.RawMessage{
 		"MessageBody":obj,
 	})
-	fmt.Println(requestBody)
 	if(err!=nil){
 		log.Fatal(err)
 	}
@@ -108,7 +122,18 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 	if(err!=nil){
 		log.Fatal(err)
 	}
-	fmt.Println(resp.Body)
+	fmt.Println(resp)
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode("Transaction successfull")
+	return
+	//if resp.StatusCode == http.StatusOK {
+	//	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	bodyString := string(bodyBytes)
+	//	fmt.Println(bodyString)
+	//}
 }
 func recurringPost(w http.ResponseWriter,r *http.Request) {
 	var client *mongo.Client
@@ -121,7 +146,6 @@ func recurringPost(w http.ResponseWriter,r *http.Request) {
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
-		fmt.Println("error")
 	}
 	var req recurrin
 	err2 := json.NewDecoder(r.Body).Decode(&req)
