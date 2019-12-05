@@ -5,7 +5,7 @@ const User = require('../../models/User');
 const auth = require('../../middleware/auth');
 
 // @route    POST api/account
-// @desc     Test route
+// @desc     Create Account route
 // @access   Public
 router.post('/', async (req, res) => {
   const { type, email, balance } = req.body;
@@ -16,15 +16,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ errors: [{ msg: 'Please Register!' }] });
     }
 
-    let userEmail = await Account.find({ email: email });
-    if (userEmail) {
-      if (userEmail.type == type) {
-        return res
-          .status(400)
-          .json({
-            errors: [{ msg: `Account ${userEmail.type} type already exists` }]
-          });
-      }
+    let userEmail = await Account.find({ email: email, type: type });
+    console.log(userEmail);
+    if (userEmail.length > 0) {
+      return res.status(400).json({
+        errors: [{ msg: `Account ${userEmail[0].type} type already exists` }]
+      });
     }
 
     account = new Account({
@@ -33,21 +30,49 @@ router.post('/', async (req, res) => {
       balance
     });
     await account.save();
-    res.status(200).json({ msg: "Account Created"});
+    res.status(200).json({ msg: 'Account Created' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 });
 
-router.get('/:type', auth, async (req, res) => {
+// @route    GET api/account/:type
+// @desc     Get Account Balance route
+// @access   Public
+router.get('/:id/:type', async (req, res) => {
   try {
     const type = req.params.type;
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.params.id).select('-password');
     const account = await Account.find({ email: user.email, type: type });
     res.status(200).json({ balance: account[0].balance });
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route    DELETE api/account/:id/:type
+// @desc     Delete Account route
+// @access   Public
+router.delete('/:id/:type', async (req, res) => {
+  try {
+    console.log(req.params);
+    console.log(req.params.id);
+    const user = req.params.id;
+    const type = req.params.type;
+
+    const account = await Account.deleteOne({ email: user, type: type });
+    console.log(account);
+    if (account.deletedCount == 0) {
+      return res
+        .status(400)
+        .json({ Errors: [{ msg: `Account ${type} does not exist` }] });
+    }
+
+    res.status(200).json({ msg: `Account ${type} is deleted` });
+  } catch (err) {
+    console.log(err.message);
     res.status(500).send('Server error');
   }
 });
