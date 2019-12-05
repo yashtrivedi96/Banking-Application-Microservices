@@ -86,7 +86,7 @@ func addtransactionsAdmin(w http.ResponseWriter,r *http.Request,){
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -120,7 +120,10 @@ func addtransactionsAdmin(w http.ResponseWriter,r *http.Request,){
 	if(err!=nil){
 		log.Fatal(err)
 	}
-	fmt.Println(resp.Body)
+	//fmt.Println(resp.Body)
+	fmt.Println(resp)
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode("Transaction successfull")
 }
 
 
@@ -129,7 +132,7 @@ func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -194,7 +197,10 @@ func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 	if(err != nil){
 		log.Fatal(err)
 	}
-	fmt.Println(resp.Body)
+	//fmt.Println(resp.Body)
+	fmt.Println(resp)
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode("Transaction successfull")
 }
 
 func transferPut(w http.ResponseWriter,r *http.Request,){
