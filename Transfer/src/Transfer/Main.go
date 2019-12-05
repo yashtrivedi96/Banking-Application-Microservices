@@ -45,6 +45,7 @@ type recurri struct{
 type transferAmount struct{
 	Sender string `json:"email"`
 	Receiver string `json:"email2"`
+	Type string `json:"type"`
 	TransferAmount string `json:"transferAmount"`
 }
 type accounts struct {
@@ -58,7 +59,7 @@ func main(){
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
 	router.HandleFunc("/recurringTransfer",recurringPost).Methods("POST")
-	router.HandleFunc("/recurringTransfer",recurringGet).Methods("GET")
+	router.HandleFunc("/recurringTransfer/{email}",recurringGet).Methods("GET")
 	router.HandleFunc("/transferWithinBank",transferWithinBank).Methods("PUT")
 	router.HandleFunc("/admin",addtransactionsAdmin).Methods("PUT")
 	log.Fatal(http.ListenAndServe(":3000", router))
@@ -169,7 +170,7 @@ func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 	Check.EmailID = req.Sender
 	obj, err := json.Marshal(map[string]string{
 		"email" : req.Sender,
-		"type" : "savings",
+		"type" : req.Type,
 		"operation" : "debit",
 		"amount" : req.TransferAmount,
 	})
@@ -190,7 +191,7 @@ func transferWithinBank(w http.ResponseWriter,r *http.Request,){
 
 	obj, err = json.Marshal(map[string]string{
 		"email" : req.Receiver,
-		"type" : "savings",
+		"type" : req.Type,
 		"operation" : "credit",
 		"amount" : req.TransferAmount,
 	})
@@ -314,15 +315,11 @@ func recurringGet(w http.ResponseWriter, r* http.Request){
 		log.Fatal(err)
 		fmt.Println("error")
 	}
-	var req check
-	err2 := json.NewDecoder(r.Body).Decode(&req)
-	if (err2 != nil) {
-		log.Fatal(err2)
-	}
+	email := mux.Vars(r)["email"]
 
 	var results []recurri
 	collection := client.Database("Bank").Collection("recurringTransfer")
-	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",req.EmailID}})
+	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",email}})
 	if(err!=nil){
 		log.Fatal(err)
 	}

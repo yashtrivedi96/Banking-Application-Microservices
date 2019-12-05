@@ -46,7 +46,7 @@ func main(){
 	router.HandleFunc("/transfer",transferGet).Methods("GET")
 	router.HandleFunc("/transfer",transferPut).Methods("PUT")
 	router.HandleFunc("/recurring",recurringPost).Methods("POST")
-	router.HandleFunc("/recurring",recurringGet).Methods("GET")
+	router.HandleFunc("/recurring/{email}",recurringGet).Methods("GET")
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
 
@@ -176,15 +176,15 @@ func recurringGet(w http.ResponseWriter, r* http.Request){
 		log.Fatal(err)
 		fmt.Println("error")
 	}
-	var req check
+	/*var req check
 	err2 := json.NewDecoder(r.Body).Decode(&req)
 	if (err2 != nil) {
 		log.Fatal(err2)
-	}
-
+	}*/
+	email := mux.Vars(r)["email"]
 	var results []recurrin
 	collection := client.Database("Bank").Collection("recurringTransfer")
-	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",req.EmailID}})
+	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",email}})
 	if(err!=nil){
 		log.Fatal(err)
 	}
