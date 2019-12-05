@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const Search = require('../model/Search');
+const Search = require('../Model/Search');
 
 router.post('/search', async (req, res) => {
    const search = new Search({

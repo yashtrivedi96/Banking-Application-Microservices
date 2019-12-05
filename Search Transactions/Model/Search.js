@@ -22,6 +22,6 @@ const searchSchema = new mongoose.Schema({
         default: Date.now
     }
 },
-    { collection: 'transaction_details'});
+    { collection: 'transactions'});
 
 module.exports = mongoose.model('Search', searchSchema);
