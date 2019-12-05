@@ -54,7 +54,7 @@ func transferGet(w http.ResponseWriter,r *http.Request,) {
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -63,7 +63,7 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 		log.Fatal(err)
 		fmt.Println("error")
 	}
-	collection := client.Database("test").Collection("account")
+	collection := client.Database("Bank").Collection("accounts")
 	var result transferRequest
 	locationId := mux.Vars(r)["EmailID"]
 	err = collection.FindOne(context.TODO(), bson.D{{"EmailID", locationId}}).Decode(&result)
@@ -78,7 +78,7 @@ clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifu
 
 func transferPut(w http.ResponseWriter,r *http.Request,){
 
-var result accounts
+	var result accounts
 	var req transferRequest
 	err2:=json.NewDecoder(r.Body).Decode(&req)
 	if(err2!=nil){
@@ -87,7 +87,7 @@ var result accounts
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -108,7 +108,7 @@ var result accounts
 	}
 	obj,err:=json.Marshal(map[string]string{
 		"email":req.EmailID,
-		"type":"savings",
+		"type":req.Type,
 		"operation":"debit",
 		"amount":req.TransferAmount,
 	})
@@ -139,7 +139,7 @@ func recurringPost(w http.ResponseWriter,r *http.Request) {
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -153,11 +153,13 @@ func recurringPost(w http.ResponseWriter,r *http.Request) {
 		log.Fatal(err2)
 	}
 
-	collection := client.Database("test").Collection("recurringTransfer")
+	collection := client.Database("Bank").Collection("recurringTransfer")
 	_, err = collection.InsertOne(context.TODO(), req)
 	if (err != nil) {
 		log.Fatal(err)
 	}
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode("Transaction successfull")
 }
 
 func recurringGet(w http.ResponseWriter, r* http.Request){
@@ -165,7 +167,7 @@ func recurringGet(w http.ResponseWriter, r* http.Request){
 	var client *mongo.Client
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Agrifund?retryWrites=true&w=majority")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://nivali:Niv12345@agrifund-fqagq.mongodb.net/Bank?retryWrites=true&w=majority")
 	fmt.Println("Client Options set...")
 	client, err := mongo.Connect(ctx, clientOptions)
 	fmt.Println("Mongo Connected...")
@@ -181,7 +183,7 @@ func recurringGet(w http.ResponseWriter, r* http.Request){
 	}
 
 	var results []recurrin
-	collection := client.Database("test").Collection("recurringTransfer")
+	collection := client.Database("Bank").Collection("recurringTransfer")
 	cursor,err:=collection.Find(context.TODO(),bson.D{{"email",req.EmailID}})
 	if(err!=nil){
 		log.Fatal(err)
@@ -195,5 +197,6 @@ func recurringGet(w http.ResponseWriter, r* http.Request){
 		results = append(results, result)
 	}
 	fmt.Println(results)
-json.NewEncoder(w).Encode(results)
+	json.NewEncoder(w).Encode(results)
 }
+
