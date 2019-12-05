@@ -37,14 +37,27 @@ router.post('/', async (req, res) => {
   }
 });
 
-// @route    GET api/account/:type
+// @route    GET api/account/:id/:type
 // @desc     Get Account Balance route
 // @access   Public
 router.get('/:id/:type', async (req, res) => {
   try {
     const type = req.params.type;
-    const user = await User.findById(req.params.id).select('-password');
-    const account = await Account.find({ email: user.email, type: type });
+    console.log(req.params.id);
+    const user = await User.find({ email: req.params.id }).select('-password');
+    if (user.length == 0) {
+      return res.status(400).json({
+        errors: [{ msg: `${req.params.id} does not have an account` }]
+      });
+    }
+    console.log(user);
+    const account = await Account.find({ email: user[0].email, type: type });
+    console.log(account);
+    if (account.length == 0) {
+      return res.status(404).json({
+        errors: [{ msg: `${req.params.id} does not have ${type} account` }]
+      });
+    }
     res.status(200).json({ balance: account[0].balance });
   } catch (err) {
     console.error(err.message);
@@ -66,7 +79,7 @@ router.delete('/:id/:type', async (req, res) => {
     console.log(account);
     if (account.deletedCount == 0) {
       return res
-        .status(400)
+        .status(404)
         .json({ Errors: [{ msg: `Account ${type} does not exist` }] });
     }
 
