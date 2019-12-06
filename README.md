@@ -1,7 +1,5 @@
 # team-project-cmpe202-team-project
 
-# team-project-cmpe202-team-project
-
 Banking System Architecture:<br>
 
 Introduction<br>
@@ -33,13 +31,6 @@ Resource Components<br>
 In order to achieve consistency using NoSQL, the architecture uses combination of SQS and lambda to perform any write operations on MongoDB. MongoDB is 40% less expensive than SQL Database, so it is an attempt to use NoSQL DB to achieve consistentcy. All the write operations are need to be performed only by the lambda. <br>
 We are using microservice architecture where each service is deployed on different pods. This makes the system fault tolerant and scalable. Failure of one service will not affect the other services. Moreover, all the services can be written in different APIs.We used Nodejs for Search Transactions, Login, and Accounts API and Go for Transactions, and Transfer API.
 To handle large user traffic, we used Network load balancer. API-Gateway is used for securing routes.  
-
-## Architecture Diagram
-
-![Architecture Diagram](https://github.com/gopinathsjsu/team-project-cmpe202-team-project/blob/master/Architecture%20Diagram.jpg)
-
-**API Reference doc** - https://documenter.getpostman.com/view/2631439/SWE3dfYt
-
 
 ## Architecture Diagram
 
