@@ -1,20 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-  generation: 2
-  labels:
-    app: register
-  name: register
-  namespace: default
-  resourceVersion: "3293"
-  selfLink: /apis/apps/v1/namespaces/default/deployments/register
-  uid: a4dc5de8-3766-4cbc-a4ab-702e55358b16
 spec:
-  progressDeadlineSeconds: 600
   replicas: 2
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: register
@@ -24,34 +12,15 @@ spec:
       maxUnavailable: 25%
     type: RollingUpdate
   template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: register
     spec:
       containers:
       - image: kowshhal/register
         imagePullPolicy: Always
         name: register
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-      dnsPolicy: ClusterFirst
       restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
 ---
   apiVersion: v1
   kind: Service
-  metadata:
-    labels:
-      app: register
-    name: register
-    namespace: default
-    resourceVersion: "3134"
-    selfLink: /api/v1/namespaces/default/services/register
-    uid: e4b18280-8b9f-4ce7-9c6b-84f48bb872bb
   spec:
     clusterIP: 10.152.183.174
     externalTrafficPolicy: Cluster
@@ -62,8 +31,5 @@ spec:
       targetPort: 3000
     selector:
       app: register
-    sessionAffinity: None
     type: NodePort
-  status:
-    loadBalancer: {}
   

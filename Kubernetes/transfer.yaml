@@ -1,20 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-  generation: 2
-  labels:
-    app: transfer
-  name: transfer
-  namespace: default
-  resourceVersion: "57765"
-  selfLink: /apis/apps/v1/namespaces/default/deployments/transfer
-  uid: 2ed983f9-13cd-45df-89e3-2c81be00a1fb
 spec:
-  progressDeadlineSeconds: 600
   replicas: 2
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: transfer
@@ -24,34 +12,16 @@ spec:
       maxUnavailable: 25%
     type: RollingUpdate
   template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: transfer
     spec:
       containers:
       - image: kowshhal/transfer
         imagePullPolicy: Always
         name: transfer
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-      dnsPolicy: ClusterFirst
       restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app: transfer
-  name: transfer
-  namespace: default
-  resourceVersion: "18105"
-  selfLink: /api/v1/namespaces/default/services/transfer
-  uid: b2bc8287-c595-49e9-bec5-0326ab0b688f
 spec:
   clusterIP: 10.152.183.175
   externalTrafficPolicy: Cluster
@@ -62,5 +32,4 @@ spec:
     targetPort: 3000
   selector:
     app: transfer
-  sessionAffinity: None
   type: NodePort
