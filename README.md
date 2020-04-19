@@ -1,4 +1,4 @@
-# team-project-cmpe202-team-project
+# team-project
 
 Banking System Architecture:<br>
 
